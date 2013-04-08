@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<integer name="division_south_platte">1</integer>
+	<integer name="division_arkansas">2</integer>
+	<integer name="division_rio_grande">3</integer>
+	<integer name="division_gunnison">4</integer>
+	<integer name="division_colorado">5</integer>
+	<integer name="division_yampa_white">6</integer>
+	<integer name="division_san_juan_dolores">7</integer>
+</resources>

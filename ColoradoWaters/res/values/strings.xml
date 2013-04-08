@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">Colorado Waters</string>
+	
+	<string name="division_south_platte">South Platte</string>
+	<string name="division_arkansas">Arkansas</string>
+	<string name="division_rio_grande">Rio Grande</string>
+	<string name="division_gunnison">Gunnison</string>
+	<string name="division_colorado">Colorado</string>
+	<string name="division_yampa_white">Yampa/White</string>
+	<string name="division_san_juan_dolores">San Juan/Dolores</string>
+	
+	<string name="text_empty_stations_list">No Transmitting Stations Available</string>
+	<string name="text_station_details">Station Details</string>
+	<string name="text_no_chart_data_available">No Provisional Data Available</string>
+	<string name="text_current_conditions">Current Conditions</string>
+</resources>

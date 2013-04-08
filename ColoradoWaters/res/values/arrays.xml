@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string-array name="water_divisions_names">
+		<item>@string/division_south_platte</item>
+		<item>@string/division_arkansas</item>
+		<item>@string/division_rio_grande</item>
+		<item>@string/division_gunnison</item>
+		<item>@string/division_colorado</item>
+		<item>@string/division_yampa_white</item>
+		<item>@string/division_san_juan_dolores</item>
+	</string-array>
+	
+	<integer-array name="water_divisions_ids">
+		<item>@integer/division_south_platte</item>
+		<item>@integer/division_arkansas</item>
+		<item>@integer/division_rio_grande</item>
+		<item>@integer/division_gunnison</item>
+		<item>@integer/division_colorado</item>
+		<item>@integer/division_yampa_white</item>
+		<item>@integer/division_san_juan_dolores</item>
+	</integer-array>
+	
+	<string name="key_dischrg">DISCHRG</string>
+	<string name="key_gage_ht">GAGE_HT</string>
+	<string name="key_storage">STORAGE</string>
+	<string name="key_airtemp">AIRTEMP</string>
+	<string name="key_airtemp">AIRTEMP</string>
+	<string name="key_precip">PRECIP</string>
+	<string name="key_elev">ELEV</string>
+	
+	<string-array name="variable_keys_array">
+		<item>DISCHRG</item>
+		<item>GAGE_HT</item>
+		<item>STORAGE</item>
+		<item>ELEV</item>
+		<item>AIRTEMP</item>
+		<item>PRECIP</item>
+	</string-array>
+	
+	<string-array name="variable_labels_array">
+		<item>Discharge</item>
+		<item>Gage Height</item>
+		<item>Storage</item>
+		<item>Elevation</item>
+		<item>Air Temperature</item>
+		<item>Precipitation</item>
+	</string-array>
+	
+	<string-array name="variable_measure_array">
+		<item>cfs</item>
+		<item>ft</item>
+		<item>af</item>
+		<item>ft</item>
+		<item>F</item>
+		<item>in</item>
+	</string-array>
+</resources>

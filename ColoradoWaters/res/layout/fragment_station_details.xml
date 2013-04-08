@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:chartview="http://schemas.android.com/apk/res-auto"
+	android:id="@+id/root_container"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:layout_margin="8dp"
+	android:padding="8dp"
+>
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:paddingTop="8dp"
+		android:paddingLeft="8dp"
+		android:paddingRight="8dp"
+		android:orientation="vertical"
+		android:background="@drawable/card_background"
+	>
+		<LinearLayout
+			android:id="@+id/chart_container"
+			android:layout_width="match_parent"
+			android:layout_height="0dp"
+			android:layout_weight="4"
+			android:orientation="vertical"
+		>
+			<TextView
+				android:id="@+id/title_view"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="8dp"
+				style="@style/StationDetailTitle.CW"
+				android:fontFamily="sans-serif-light"
+			/>
+			
+			<TextView
+				android:id="@+id/provider_view"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="8dp"
+				style="@style/StationProviderTitle.CW"
+			/>
+			
+			<RelativeLayout
+				android:layout_width="match_parent"
+				android:layout_height="0dp"
+				android:layout_weight="1"
+				android:layout_marginTop="8dp"
+			>
+				<com.michaelpardo.android.widget.chartview.ChartView
+					android:id="@+id/chart_view"
+					android:layout_width="match_parent"
+					android:layout_height="match_parent"
+					chartview:bottomLabelHeight="24dp"
+					chartview:gridLineColor="@color/graph_grid_line"
+					chartview:gridLineWidth="1dp"
+					chartview:gridLinesHorizontal="6"
+					chartview:gridLinesVertical="3"
+					chartview:leftLabelWidth="38dp"
+				/>
+				
+				<ProgressBar
+					android:id="@+id/chart_progress_view"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:layout_centerInParent="true"
+				/>
+				
+				<TextView
+					android:id="@+id/chart_error_view"
+					android:layout_width="match_parent"
+					android:layout_height="match_parent"
+					android:gravity="center"
+					style="@android:style/TextAppearance.Medium"
+					android:text="@string/text_no_chart_data_available"
+				/>
+			</RelativeLayout>
+			<TextView
+				android:id="@+id/chart_variable"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:textSize="12sp"
+				android:gravity="center"
+			/>
+		</LinearLayout>
+		
+		<LinearLayout
+			android:layout_width="match_parent"
+			android:layout_height="0dp"
+			android:layout_weight="5"
+			android:paddingTop="8dp"
+			android:paddingLeft="16dp"
+			android:paddingRight="16dp"
+			android:paddingBottom="8dp"
+			android:orientation="vertical"
+		>
+			
+			<TextView
+				android:id="@+id/current_conditions_header"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="8dp"
+				android:text="@string/text_current_conditions"
+				style="@style/ListConditionsHeader.CW"
+			/>
+			
+			<ListView
+				android:id="@+id/conditions_list"
+				android:layout_width="match_parent"
+				android:layout_height="fill_parent"
+			/>
+			
+		</LinearLayout>
+	</LinearLayout>
+</FrameLayout>

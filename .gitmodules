@@ -1,0 +1,3 @@
+[submodule "ThirdParty/StickyListHeaders"]
+	path = ThirdParty/StickyListHeaders
+	url = git://github.com/emilsjolander/StickyListHeaders.git
