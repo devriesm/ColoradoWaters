@@ -23,4 +23,7 @@
     <color name="window_background_cw">#E5E5E5</color>
     
     <color name="graph_grid_line">#E5E5E5</color>
+    
+    <color name="btn_toggle_off">#333333</color>
+    <color name="btn_toggle_on">#333333</color>
 </resources>

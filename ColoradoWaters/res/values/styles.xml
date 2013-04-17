@@ -156,4 +156,16 @@
 		<item name="android:textColor">#666666</item>
     </style>
     
+    
+    <style name="StationChartFilterToggle.CW" parent="@android:style/Widget">
+		<item name="android:textColor">@color/btn_toggle_text</item>
+		<item name="android:textSize">12sp</item>
+		<item name="android:background">@drawable/filter_btn_toggle</item>
+		<item name="android:padding">8dp</item>
+		<item name="android:layout_marginRight">16dp</item>
+		<item name="android:layout_width">wrap_content</item>
+		<item name="android:layout_height">30dp</item>
+		<item name="android:button">@null</item>
+    </style>
+    
 </resources>

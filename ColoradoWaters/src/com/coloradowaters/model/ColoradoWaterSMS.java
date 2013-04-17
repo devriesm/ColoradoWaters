@@ -20,4 +20,9 @@ public interface ColoradoWaterSMS
 	public static final String EXTRA_DIVISION = "division";
 	public static final String EXTRA_WATER_DISTRICT = "water_district";
 	public static final String EXTRA_STATION = "station";
+	
+	
+	public static final int STATION_VAR_LOADER_ID = 1;
+	public static final int STREAM_FLOW_LOADER_ID = 2;
+	public static final int CURRENT_CONDITIONS_LOADER_ID = 3;
 }

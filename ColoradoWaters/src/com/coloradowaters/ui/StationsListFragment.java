@@ -101,6 +101,7 @@ public class StationsListFragment extends ListFragment implements LoaderManager.
 		Station station = getListAdapter().getItem( position );
 		Intent intent = new Intent( getActivity(), StationDetailsActivity.class );
 		intent.putExtra( ColoradoWaterSMS.EXTRA_STATION, station );
+		intent.putExtra( Intent.EXTRA_TITLE, station.name );
 		startActivity( intent );
 	}
 	
