@@ -29,69 +29,87 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
-import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import com.coloradowaters.R;
 import com.coloradowaters.model.ColoradoWaterSMS;
-import com.coloradowaters.model.CurrentCondition;
 import com.coloradowaters.model.Station;
 import com.coloradowaters.model.StationVariable;
 import com.coloradowaters.model.StreamFlowTransmission;
+import com.coloradowaters.ui.StationChartFragment.ValueLabelAdapter.LabelOrientation;
 import com.coloradowaters.ui.StationDetailsActivity.OnLoaderComplete;
-import com.coloradowaters.ui.StationDetailsFragment.ValueLabelAdapter.LabelOrientation;
 import com.coloradowaters.util.VariablesUtil;
 import com.michaelpardo.android.widget.chartview.ChartView;
 import com.michaelpardo.android.widget.chartview.LabelAdapter;
 import com.michaelpardo.android.widget.chartview.LinearSeries;
 import com.michaelpardo.android.widget.chartview.LinearSeries.LinearPoint;
 
-public class StationDetailsFragment extends Fragment implements OnLoaderComplete
+public class StationChartFragment extends Fragment implements OnLoaderComplete
 {
-	private static final String TAG = StationDetailsFragment.class.getSimpleName();
 	private static final int STATION_VAR_LOADER_ID = 1;
 	private static final int STREAM_FLOW_LOADER_ID = 2;
-	private static final int CURRENT_CONDITIONS_LOADER_ID = 3;
 	
-	private TextView mTitleText;
-	private TextView mProviderText;
+	private static final String EXTRA_KEY_SELECTED_FILTER = "selected_filter";
+	
+	private static final int ONE_DAY = 1;
+	private static final int ONE_WEEK = 2;
+	private static final int ONE_MONTH = 3;
+	
+	
 	private ChartView mChartView;
-	private ProgressBar mChartProgress;
-	private TextView mChartErrorView;
+	private ProgressBar mProgressBar;
+	private TextView mErrorView;
 	private TextView mChartVariable;
-	private ListView mListView;
+	
+	private int mSelectedFilter = ONE_DAY;
+	
+	private List<StationVariable> mStationVariables;
+	
+	
+	private final RadioGroup.OnCheckedChangeListener ToggleListener = new RadioGroup.OnCheckedChangeListener()
+	{
+		@Override
+		public void onCheckedChanged( final RadioGroup radioGroup, final int id )
+		{
+			if( id == R.id.button_day )
+			{
+				mSelectedFilter = ONE_DAY;
+			}else if( id == R.id.button_week )
+			{
+				mSelectedFilter = ONE_WEEK;
+			}else if( id == R.id.button_month )
+			{
+				mSelectedFilter = ONE_MONTH;
+			}
+			
+			showLoading();
+			onStationVariablesLoaded( mStationVariables );
+		}
+    };
 	
 	
 	@Override
 	public View onCreateView( LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState )
 	{
-		View view = inflater.inflate( R.layout.fragment_station_details, null );
-		return view;
-	}
-	
-	
-	@Override
-	public void onViewCreated( View view, Bundle savedInstanceState )
-	{
-		super.onViewCreated( view, savedInstanceState );
+		View view = inflater.inflate( R.layout.fragment_station_chart, container, false );
 		
-		mTitleText = (TextView) view.findViewById( R.id.title_view );
-		mProviderText = (TextView) view.findViewById( R.id.provider_view );
 		mChartView = (ChartView) view.findViewById( R.id.chart_view );
-		mChartProgress = (ProgressBar) view.findViewById( R.id.chart_progress_view );
-		mChartErrorView = (TextView) view.findViewById( R.id.chart_error_view );
+		mProgressBar = (ProgressBar) view.findViewById( R.id.chart_progress_view );
+		mErrorView = (TextView) view.findViewById( R.id.chart_error_view );
 		mChartVariable = (TextView) view.findViewById( R.id.chart_variable );
-		mListView = (ListView) view.findViewById( R.id.conditions_list );
 		
-		mChartErrorView.setVisibility( View.GONE );
 		
-		Station station = getArguments().getParcelable( ColoradoWaterSMS.EXTRA_STATION );
+		if( savedInstanceState != null )
+		{
+			mSelectedFilter = savedInstanceState.getInt( EXTRA_KEY_SELECTED_FILTER );
+		}
 		
-		mTitleText.setText( station.name );
-		mProviderText.setText( station.dataProvider );
 		
+		( (RadioGroup) view.findViewById( R.id.chart_filter_container ) ).setOnCheckedChangeListener( ToggleListener );
+		
+		return view;
 	}
 	
 	
@@ -100,11 +118,10 @@ public class StationDetailsFragment extends Fragment implements OnLoaderComplete
 	{
 		super.onActivityCreated( savedInstanceState );
 		
-		mListView.setAdapter( new ConditionsAdapter( getActivity() ) );
-		
 		getLoaderManager().initLoader( STATION_VAR_LOADER_ID, getArguments(), new StationVariableLoaderListener( getActivity(), this ) );
 		getLoaderManager().initLoader( STREAM_FLOW_LOADER_ID, getArguments(), new StreamFlowLoaderListener( getActivity(), this ) );
-		getLoaderManager().initLoader( CURRENT_CONDITIONS_LOADER_ID, getArguments(), new CurrentConditionsLoaderListener( getActivity(), this ) );
+		
+		showLoading();
 	}
 	
 	
@@ -117,6 +134,9 @@ public class StationDetailsFragment extends Fragment implements OnLoaderComplete
 			{
 				List<StationVariable> variables = (List<StationVariable>) data;
 				onStationVariablesLoaded( variables );
+			}else
+			{
+				showNoData();
 			}
 		}else if( loaderId == STREAM_FLOW_LOADER_ID )
 		{
@@ -124,17 +144,9 @@ public class StationDetailsFragment extends Fragment implements OnLoaderComplete
 			{
 				List<StreamFlowTransmission> transmissions = (List<StreamFlowTransmission>) data;
 				onStreamFlowTransmissionLoaded( transmissions );
-			}
-		}else if( loaderId == CURRENT_CONDITIONS_LOADER_ID )
-		{
-			//init current conditions adapter
-			if( data != null )
+			}else
 			{
-				List<CurrentCondition> conditions = (List<CurrentCondition>) data;
-				ConditionsAdapter adapter = (ConditionsAdapter) mListView.getAdapter();
-				adapter.setData( conditions );
-				adapter.notifyDataSetChanged();
-				
+				showNoData();
 			}
 		}
 	}
@@ -144,6 +156,7 @@ public class StationDetailsFragment extends Fragment implements OnLoaderComplete
 	{
 		if( variables != null && !variables.isEmpty() )
 		{
+			mStationVariables = variables;
 			StationVariable var = null;
 			for( StationVariable v : variables )
 			{
@@ -170,17 +183,25 @@ public class StationDetailsFragment extends Fragment implements OnLoaderComplete
 				var = variables.get( 0 );
 			
 			mChartVariable.setText( VariablesUtil.getLabelForVariable( getActivity(), var.variable ) + " (" + VariablesUtil.getMeasurementForVariable( getActivity(), var.variable ) + ")" );
-			Log.e( TAG, "Var : " + var.variable );
 			
 			Loader loader = getLoaderManager().getLoader( STREAM_FLOW_LOADER_ID );
 			if( loader != null && loader instanceof StreamFlowLoader )
 			{
 				Calendar endCal = Calendar.getInstance( TimeZone.getTimeZone( "America/Denver" ) );
 				endCal.set( Calendar.SECOND, 0 );
-				endCal.set( Calendar.HOUR, 0 );
+				//endCal.set( Calendar.HOUR, 0 );
 				
 				Calendar startCal = (Calendar) endCal.clone();
-				startCal.set( Calendar.HOUR, -168 );
+				
+				if( mSelectedFilter == ONE_DAY )
+					startCal.add( Calendar.DATE, -1 );
+				else if( mSelectedFilter == ONE_WEEK )
+					startCal.add( Calendar.DATE, -7 );
+				else if( mSelectedFilter == ONE_MONTH )
+					startCal.add( Calendar.MONTH, -1 );
+				
+				Log.e( "StationChartFragment", "SELECTED FILTER : " + mSelectedFilter );
+				Log.e( "StationChartFragment", "Diff : " + ( endCal.getTimeInMillis() - startCal.getTimeInMillis() ) );
 				
 				( (StreamFlowLoader) loader ).setVariable( var );
 				( (StreamFlowLoader) loader ).setStartDate( startCal.getTime() );
@@ -190,13 +211,16 @@ public class StationDetailsFragment extends Fragment implements OnLoaderComplete
 			
 		}else
 		{
-			mChartView.setVisibility( View.GONE );
+			showNoData();
 		}
 	}
 	
 	
 	private void onStreamFlowTransmissionLoaded( List<StreamFlowTransmission> data )
 	{
+		
+		mChartView.clearSeries();
+		
 		LinearSeries series = new LinearSeries();
 		series.setLineColor( getResources().getColor( R.color.main_color_cw ) );
 		series.setLineWidth( 5 );
@@ -205,10 +229,9 @@ public class StationDetailsFragment extends Fragment implements OnLoaderComplete
 			series.addPoint(new LinearPoint( i, data.get( i ).amount ) );
 		}
 		double maxY = series.getMaxY();
-		Log.e( TAG, "Max Y : " + maxY );
 		
 		int rounded = (int) Precision.round( maxY, -2 );
-		Log.e( TAG, "ROUNDED : " + rounded );
+		
 		if( rounded < maxY )
 			rounded = rounded + 100;
 		else if( rounded == 0 )
@@ -222,15 +245,39 @@ public class StationDetailsFragment extends Fragment implements OnLoaderComplete
 			mChartView.addSeries( series );
 			mChartView.setLeftLabelAdapter( new ValueLabelAdapter( getActivity(), LabelOrientation.VERTICAL, data ) );
 			mChartView.setBottomLabelAdapter( new ValueLabelAdapter( getActivity(), LabelOrientation.HORIZONTAL, data ) );
-			mChartView.setVisibility( View.VISIBLE );
-			mChartErrorView.setVisibility( View.GONE );
+			
+			showChart();
 		}else
 		{
-			mChartErrorView.setVisibility( View.VISIBLE );
-			//mChartView.setVisibility( View.INVISIBLE );
+			showNoData();
 		}
-		
-		mChartProgress.setVisibility( View.GONE );
+	}
+	
+	
+	private void showNoData()
+	{
+		mErrorView.setVisibility( View.VISIBLE );
+		mProgressBar.setVisibility( View.GONE );
+		mChartView.setVisibility( View.GONE );
+		mChartVariable.setVisibility( View.GONE );
+	}
+	
+	
+	private void showLoading()
+	{
+		mErrorView.setVisibility( View.GONE );
+		mChartView.setVisibility( View.GONE );
+		mChartVariable.setVisibility( View.GONE );
+		mProgressBar.setVisibility( View.VISIBLE );
+	}
+	
+	
+	private void showChart()
+	{
+		mErrorView.setVisibility( View.GONE );
+		mChartView.setVisibility( View.VISIBLE );
+		mChartVariable.setVisibility( View.VISIBLE );
+		mProgressBar.setVisibility( View.GONE );
 	}
 	
 	
@@ -416,7 +463,7 @@ public class StationDetailsFragment extends Fragment implements OnLoaderComplete
 		private List<StreamFlowTransmission> mStreamFlowTransmissions = null;
 		private boolean mHasErrors = false;
 		private boolean mIsLoading = false;
-		private SimpleDateFormat df = new SimpleDateFormat( "yyyy-MM-dd" );
+		private SimpleDateFormat df = new SimpleDateFormat( "yyyy-MM-dd hh:mm:ss" );
 		
 
 		public StreamFlowLoader( Context context, Station station )
@@ -480,9 +527,13 @@ public class StationDetailsFragment extends Fragment implements OnLoaderComplete
 			endProp.setNamespace( ColoradoWaterSMS.NAMESPACE );
 			request.addProperty( endProp );
 			
+			String agg = "H";
+			if( mEndDate.getTime() - mStartDate.getTime() > 604800000 )
+				agg = "D";
+			
 			PropertyInfo aggrProp = new PropertyInfo();
 			aggrProp.setName( "Aggregation" );
-			aggrProp.setValue( "H" );
+			aggrProp.setValue( agg );
 			aggrProp.setType( String.class );
 			aggrProp.setNamespace( ColoradoWaterSMS.NAMESPACE );
 			request.addProperty( aggrProp );
@@ -499,7 +550,8 @@ public class StationDetailsFragment extends Fragment implements OnLoaderComplete
 				
 				if( result != null )
 				{
-					SimpleDateFormat df = new SimpleDateFormat( "yyyy-MM-dd HH:mm" );
+					SimpleDateFormat dfHourly = new SimpleDateFormat( "yyyy-MM-dd HH:mm" );
+					SimpleDateFormat dfDaily = new SimpleDateFormat( "yyyy-MM-dd" );
 					data = new ArrayList<StreamFlowTransmission>();
 					
 					for( int i = 0; i < result.getPropertyCount(); i++ )
@@ -514,8 +566,14 @@ public class StationDetailsFragment extends Fragment implements OnLoaderComplete
 						{
 							try
 							{
-								trans.date = df.parse( obj.getPropertyAsString( "transDateTime" ) );
-							}catch( ParseException e ){}
+								trans.date = dfHourly.parse( obj.getPropertyAsString( "transDateTime" ) );
+							}catch( ParseException e )
+							{
+								try
+								{
+									trans.date = dfDaily.parse( obj.getPropertyAsString( "transDateTime" ) );
+								}catch( ParseException e1 ){}
+							}
 						}
 						
 						if( obj.hasProperty( "transFlag" ) )
@@ -595,282 +653,6 @@ public class StationDetailsFragment extends Fragment implements OnLoaderComplete
 	};
 	
 	
-	private static final class CurrentConditionsLoader extends AsyncTaskLoader<List<CurrentCondition>>
-	{
-		private Station mStation;
-		private boolean mHasErrors = false;
-		private boolean mIsLoading = false;
-		private List<CurrentCondition> mData = null;
-		
-		
-		public CurrentConditionsLoader( Context context, Station station )
-		{
-			super( context );
-			mStation = station;
-			mIsLoading = true;
-		}
-		
-		
-		@Override
-		public List<CurrentCondition> loadInBackground()
-		{
-			List<CurrentCondition> conditions = null;
-			
-			SoapObject request = new SoapObject( ColoradoWaterSMS.NAMESPACE, ColoradoWaterSMS.GET_CURRENT_CONDITIONS );
-			
-			PropertyInfo divProp = new PropertyInfo();
-			divProp.setName( "Div" );
-			divProp.setValue( mStation.div );
-			divProp.setType( Integer.class );
-			divProp.setNamespace( ColoradoWaterSMS.NAMESPACE );
-			request.addProperty( divProp );
-			
-			PropertyInfo wdProp = new PropertyInfo();
-			wdProp.setName( "WD" );
-			wdProp.setValue( mStation.wd );
-			wdProp.setType( Integer.class );
-			wdProp.setNamespace( ColoradoWaterSMS.NAMESPACE );
-			request.addProperty( wdProp );
-			
-			PropertyInfo abbrevProp = new PropertyInfo();
-			abbrevProp.setName( "Abbrev" );
-			abbrevProp.setValue( mStation.abbrev );
-			abbrevProp.setType( String.class );
-			abbrevProp.setNamespace( ColoradoWaterSMS.NAMESPACE );
-			request.addProperty( abbrevProp );
-
-			SoapSerializationEnvelope soapSerializationEnvelope = new SoapSerializationEnvelope( SoapEnvelope.VER12 );
-			soapSerializationEnvelope.setOutputSoapObject( request );
-			HttpTransportSE httpTransportSE = new HttpTransportSE( ColoradoWaterSMS.SERVICE_URL );
-			SoapObject result = null;
-			
-			try
-			{
-				httpTransportSE.call( ColoradoWaterSMS.NAMESPACE + ColoradoWaterSMS.GET_CURRENT_CONDITIONS, soapSerializationEnvelope );
-				result = (SoapObject) soapSerializationEnvelope.getResponse();
-				
-				if( result != null )
-				{
-					SimpleDateFormat df = new SimpleDateFormat( "yyyy-MM-dd HH:mm" );
-					conditions = new ArrayList<CurrentCondition>();
-					for( int i = 0; i < result.getPropertyCount(); i++ )
-					{
-						SoapObject obj = (SoapObject) result.getProperty( i );
-						CurrentCondition cond = new CurrentCondition();
-						cond.abbrev = obj.getPropertyAsString( "abbrev" );
-						cond.amount = obj.getPropertyAsString( "amount" );
-						
-						if( obj.hasProperty( "currentShift" ) )
-							cond.currentShift = obj.getPropertyAsString( "currentShift" );
-							
-						cond.dataSource = obj.getPropertyAsString( "dataSource" );
-						cond.div = Integer.parseInt( obj.getPropertyAsString( "div" ) );
-						cond.gageHeight = obj.getPropertyAsString( "gageHeight" );
-						
-						try
-						{
-							cond.transDate = df.parse( obj.getPropertyAsString( "transDateTime" ) );
-						}catch( ParseException e ){}
-						
-						cond.variable = obj.getPropertyAsString( "variable" );
-						cond.wd = Integer.parseInt( obj.getPropertyAsString( "wd" ) );
-						
-						conditions.add( cond );
-						
-					}
-				}
-			}catch( IOException e )
-			{
-				mHasErrors = true;
-			}catch( XmlPullParserException e )
-			{
-				mHasErrors = true;
-			}
-			
-			return conditions;
-		}
-		
-		
-		@Override
-		public void deliverResult( List<CurrentCondition> data )
-		{
-			mIsLoading = false;
-			if( data != null )
-				mData = data;
-			
-			if( isStarted() )
-				super.deliverResult( data );
-		}
-		
-		
-		@Override
-		protected void onStartLoading()
-		{
-			mIsLoading = true;
-			if( mData != null )
-				deliverResult( mData );
-			else
-				forceLoad();
-		}
-
-		
-		@Override
-		protected void onStopLoading()
-		{
-			mIsLoading = false;
-			cancelLoad();
-		}
-		
-		
-		@Override
-		protected void onReset()
-		{
-			super.onReset();
-			onStopLoading();
-			mData = null;
-		}
-		
-		
-		public boolean isLoading()
-		{
-			return mIsLoading;
-		}
-		
-		
-		public boolean hasErrors()
-		{
-			return mHasErrors;
-		}
-		
-		
-		public void refresh()
-		{
-			reset();
-			startLoading();
-		}
-	
-	}
-	
-	
-	private static class CurrentConditionsLoaderListener implements LoaderManager.LoaderCallbacks<List<CurrentCondition>>
-	{
-		WeakReference<Context> mContext;
-		WeakReference<OnLoaderComplete> mOnLoaderComplete;
-		
-		
-		public CurrentConditionsLoaderListener( Context context, OnLoaderComplete listener )
-		{
-			mContext = new WeakReference<Context>( context );
-			mOnLoaderComplete = new WeakReference<StationDetailsActivity.OnLoaderComplete>( listener );
-		}
-		
-		
-		@Override
-		public Loader<List<CurrentCondition>> onCreateLoader( int id, Bundle args )
-		{
-			Station station = args.getParcelable( ColoradoWaterSMS.EXTRA_STATION );
-			return new CurrentConditionsLoader( mContext.get(), station );
-		}
-		
-		
-		@Override
-		public void onLoadFinished( Loader<List<CurrentCondition>> loader, List<CurrentCondition> data )
-		{
-			mOnLoaderComplete.get().onLoaderComplete( loader.getId(), data );
-		}
-		
-		
-		@Override
-		public void onLoaderReset( Loader<List<CurrentCondition>> loader )
-		{
-			// no-op
-		}
-	}
-	
-	
-	public static class ConditionsAdapter extends BaseAdapter
-	{
-		private WeakReference<Context> mContext;
-		private List<CurrentCondition> mConditions;
-		
-		public ConditionsAdapter( Context context )
-		{
-			mContext = new WeakReference<Context>( context );
-		}
-		
-		
-		@Override
-		public int getCount()
-		{
-			return ( mConditions == null ) ? 0 : mConditions.size();
-		}
-		
-		
-		@Override
-		public CurrentCondition getItem( int position )
-		{
-			if( mConditions == null || mConditions.isEmpty() || position >= mConditions.size() || position < 0 )
-				return null;
-			
-			return mConditions.get( position );
-		}
-		
-		
-		@Override
-		public long getItemId( int position )
-		{
-			return position;
-		}
-		
-		
-		@Override
-		public boolean areAllItemsEnabled()
-		{
-			return false;
-		}
-		
-		
-		@Override
-		public boolean isEnabled( int position )
-		{
-			return false;
-		}
-		
-		
-		@Override
-		public View getView( int position, View convertView, ViewGroup parent )
-		{
-			if( convertView == null )
-			{
-				LayoutInflater inflater = LayoutInflater.from( mContext.get() );
-				convertView = inflater.inflate( R.layout.view_current_condition, null );
-			}
-			CurrentCondition cond = getItem( position );
-			
-			if( cond != null )
-			{
-			
-				TextView label = (TextView) convertView.findViewById( R.id.condition_label );
-				TextView value = (TextView) convertView.findViewById( R.id.condition_value );
-				
-				label.setText( VariablesUtil.getLabelForVariable( mContext.get(), cond.variable ) );
-				
-				//TODO - ugh
-				value.setText( cond.amount + " " + VariablesUtil.getMeasurementForVariable( mContext.get(), cond.variable ) );
-			}
-			
-			return convertView;
-		}
-		
-		
-		public void setData( List<CurrentCondition> data )
-		{
-			mConditions = data;
-		}
-		
-	}
-	
-	
 	public static class ValueLabelAdapter extends LabelAdapter
 	{
 		public enum LabelOrientation
@@ -910,14 +692,15 @@ public class StationDetailsFragment extends Fragment implements OnLoaderComplete
 					tv.setText( "" );
 				}else
 				{
-					if( position == 0 )
-						tv.setGravity( Gravity.LEFT | Gravity.CENTER_VERTICAL );
-					else if( position == getCount() - 1 )
-						tv.setGravity( Gravity.RIGHT | Gravity.CENTER_VERTICAL );
-					
-					StreamFlowTransmission trans = mData.get( i );
-					Log.e( TAG, "I : " + i );
-					tv.setText( df.format( trans.date ) );
+					tv.setText( "" );
+					if( position > 0 && position < getCount() - 1 )
+					{
+						StreamFlowTransmission trans = mData.get( i );
+						try
+						{
+							tv.setText( df.format( trans.date ) );
+						}catch( Exception e ){}
+					}
 				}
 			}else
 			{
