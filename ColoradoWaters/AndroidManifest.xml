@@ -31,7 +31,7 @@
 	>
 		<meta-data
 			android:name="com.google.android.maps.v2.API_KEY"
-			android:value="AIzaSyDaWfHPkRS9N2EM5x02JqsAFNgy-8WgnKs"
+			android:value="YOUR_MAPS_KEY_HERE"
 		/>
 		<activity
 			android:name="com.coloradowaters.ui.MainActivity"
