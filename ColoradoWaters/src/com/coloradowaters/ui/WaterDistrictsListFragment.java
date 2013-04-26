@@ -207,7 +207,8 @@ public class WaterDistrictsListFragment extends ListFragment implements LoaderMa
 				mHasErrors = true;
 			}
 			
-			Collections.sort( waterDistricts, WATER_DISTRICTS_COMPARATOR );
+			if( waterDistricts != null && !waterDistricts.isEmpty() )
+				Collections.sort( waterDistricts, WATER_DISTRICTS_COMPARATOR );
 			
 			return waterDistricts;
 		}
