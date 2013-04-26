@@ -54,4 +54,11 @@
 		<item>F</item>
 		<item>in</item>
 	</string-array>
+	
+	<string-array name="station_details_tabs">
+		<item>@string/tab_current_conditions</item>
+		<item>@string/tab_charts</item>
+		<item>@string/tab_map</item>
+		<item>@string/tab_weather</item>
+	</string-array>
 </resources>

@@ -56,6 +56,6 @@ This project uses the following projects:
 
 
 ## Contributing
-Please fork this repository and contribute back using [pull requests](https://github.com/devriesm/coloradowaters/pulls) to the dev branch.
+Please fork this repository and contribute back using [pull requests](https://github.com/devriesm/coloradowaters/pulls) to the develop branch.
 
 Any contributions are appreciated (code, design or otherwise).
